@@ -10,10 +10,10 @@ public class Main {
     private static Tower attacker;
     private static Tower strong;
 
-    private static int[] dr = {0, 1, 0, -1};
+    private static int[] dr = {0, 1, 0, -1}; // 우, 하, 좌, 상
     private static int[] dc = {1, 0, -1, 0};
 
-    private static int[] ddr = {-1, -1, -1, 0, 0, 1, 1, 1};
+    private static int[] ddr = {-1, -1, -1, 0, 0, 1, 1, 1}; // 포탄 공격 범위 (8방향)
     private static int[] ddc = {-1, 0, 1, -1, 1, -1, 0, 1};
     private static int[][] chk;
 
@@ -29,14 +29,6 @@ public class Main {
             this.c = c;
         }
 
-        public void setR(int r) {
-            this.r = r;
-        }
-
-        public void setC(int c) {
-            this.c = c;
-        }
-
         public int getR() {
             return r;
         }
@@ -44,7 +36,6 @@ public class Main {
         public int getC() {
             return c;
         }
-
     }
 
     public static void main(String[] args) throws Exception {
@@ -66,10 +57,10 @@ public class Main {
         }
 
         for (int i = 1; i <= K; i++) {
-            chk = new int[N+1][M+1]; // 이번 시간에 공격과 관련 있는 자리는 1로 변경
+            chk = new int[N + 1][M + 1]; // 이번 시간에 공격과 관련 있는 자리는 1로 설정
             setAttacker();
             attack(i);
-            if(last()) {
+            if (last()) {
                 break;
             }
             broken();
@@ -82,9 +73,9 @@ public class Main {
     private static boolean last() {
         int cnt = 0;
 
-        for (int i = 1; i <= N ; i++) {
+        for (int i = 1; i <= N; i++) {
             for (int j = 1; j <= M; j++) {
-                if(map[i][j] > 0){
+                if (map[i][j] > 0) {
                     cnt++;
                 }
             }
@@ -97,7 +88,7 @@ public class Main {
         int answer = 0;
         for (int i = 1; i <= N; i++) {
             for (int j = 1; j <= M; j++) {
-                if(map[i][j] > answer){
+                if (map[i][j] > answer) {
                     answer = map[i][j];
                 }
             }
@@ -109,7 +100,7 @@ public class Main {
     private static void maintain() {
         for (int i = 1; i <= N; i++) {
             for (int j = 1; j <= M; j++) {
-                if(map[i][j] > 0 && chk[i][j] == 0) {
+                if (map[i][j] > 0 && chk[i][j] == 0) {
                     map[i][j]++;
                 }
             }
@@ -129,8 +120,9 @@ public class Main {
     private static void attack(int time) {
         findTower(); // 가장 강한 포탑 찾기
 
-        if (raser()) { // 레이저 공격 시도
-            // 레이저 공격이 안된다면 포탄 공격
+        boolean laserSuccess = !raser(); // 레이저 공격 시도 후 성공 여부 반환
+
+        if (!laserSuccess) { // 레이저 실패 시 포탄 공격
             potan();
         }
 
@@ -164,7 +156,7 @@ public class Main {
             }
 
             // 공격자와 위치가 같지 않은 경우에만 피해 입히기
-            if (!(nr == attacker.getR() && nc == attacker.getC())) {
+            if (!(nr == attacker.getR() && nc == attacker.getC()) && map[nr][nc] > 0) {
                 chk[nr][nc] = 1;
                 map[nr][nc] -= power / 2;
             }
@@ -174,7 +166,7 @@ public class Main {
     private static boolean raser() {
         Queue<int[]> queue = new ArrayDeque<>();
         boolean[][] visited = new boolean[N + 1][M + 1]; // 방문 체크 배열
-        int[][][] prev = new int[N + 1][M + 1][2]; // 이전 좌표를 저장할 배열 (이전 행, 열 저장)
+        int[][][] prev = new int[N + 1][M + 1][2]; // 이전 좌표를 저장할 배열
 
         queue.add(new int[]{attacker.getR(), attacker.getC()});
         visited[attacker.getR()][attacker.getC()] = true;
@@ -190,7 +182,7 @@ public class Main {
                 return false; // 레이저 공격 성공
             }
 
-            // 4방향 탐색 (우, 하, 좌, 상 순서)
+            // 4방향 탐색
             for (int i = 0; i < 4; i++) {
                 int nr = r + dr[i];
                 int nc = c + dc[i];
@@ -210,13 +202,11 @@ public class Main {
                 }
 
                 // 부서진 포탑(공격력 0인 포탑)이나 이미 방문한 곳은 건너뛰기
-                if (map[nr][nc] < 0 || visited[nr][nc]) continue;
+                if (map[nr][nc] <= 0 || visited[nr][nc]) continue;
 
-                // 이전 위치 기록 (현재 위치를 nr, nc의 이전 위치로 저장)
                 prev[nr][nc][0] = r;
                 prev[nr][nc][1] = c;
 
-                // 방문 처리 및 큐에 추가
                 visited[nr][nc] = true;
                 queue.add(new int[]{nr, nc});
             }
@@ -244,7 +234,6 @@ public class Main {
             int targetR = pos[0];
             int targetC = pos[1];
 
-            // 경로 상의 포탑들에 공격력의 절반 피해 입히기 (대상 포탑 제외)
             if (!(targetR == strong.getR() && targetC == strong.getC())) {
                 chk[targetR][targetC] = 1;
                 map[targetR][targetC] -= (power / 2);
@@ -252,42 +241,34 @@ public class Main {
         }
 
         // 공격 대상 포탑에 전체 공격력 피해 입히기
-        map[strong.getR()][strong.getC()] -= power; // 경로 추적 끝난 후에 피해 적용
+        map[strong.getR()][strong.getC()] -= power;
     }
 
     private static void findTower() {
         int power = 0;
-        strong = new Tower(0,0);
+        strong = new Tower(0, 0);
 
         for (int i = 1; i <= N; i++) {
             for (int j = 1; j <= M; j++) {
                 if (map[i][j] > power) {
-                    // 공격력이 더 높은 포탑 발견
                     power = map[i][j];
                     strong = new Tower(i, j);
                 } else if (map[i][j] == power) {
-                    // 공격력이 같은 경우
                     boolean shouldUpdate = false;
 
-                    // 공격한지 가장 오래된 포탑이 가장 강한 포탑
                     if (attackTime[i][j] < attackTime[strong.getR()][strong.getC()]) {
                         shouldUpdate = true;
-                    }
-                    // 공격 시간이 같다면 행과 열의 합이 큰 포탑을 선택
-                    else if (attackTime[i][j] == attackTime[strong.getR()][strong.getC()]) {
+                    } else if (attackTime[i][j] == attackTime[strong.getR()][strong.getC()]) {
                         int currentSum = i + j;
-                        int attackerSum = strong.getR() + strong.getC();
+                        int strongSum = strong.getR() + strong.getC();
 
-                        if (currentSum < attackerSum) {
+                        if (currentSum < strongSum) {
                             shouldUpdate = true;
-                        }
-                        // 행과 열의 합이 같다면 열이 더 큰 포탑을 선택
-                        else if (currentSum == attackerSum && j < strong.getC()) {
+                        } else if (currentSum == strongSum && j < strong.getC()) {
                             shouldUpdate = true;
                         }
                     }
 
-                    // 포탑 업데이트
                     if (shouldUpdate) {
                         strong = new Tower(i, j);
                     }
@@ -301,37 +282,29 @@ public class Main {
     private static void setAttacker() {
         int power = 5001;
 
-        attacker = new Tower(0,0);
+        attacker = new Tower(0, 0);
 
         for (int i = 1; i <= N; i++) {
             for (int j = 1; j <= M; j++) {
                 if (map[i][j] < power && map[i][j] > 0) {
-                    // 새로운 최약 포탑 발견
                     power = map[i][j];
                     attacker = new Tower(i, j);
                 } else if (map[i][j] == power) {
-                    // 공격력이 같은 경우
                     boolean shouldUpdate = false;
 
-                    // 더 최근에 공격한 포탑을 선택
                     if (attackTime[i][j] > attackTime[attacker.getR()][attacker.getC()]) {
                         shouldUpdate = true;
-                    }
-                    // 공격 시간이 같다면 행과 열의 합이 큰 포탑을 선택
-                    else if (attackTime[i][j] == attackTime[attacker.getR()][attacker.getC()]) {
+                    } else if (attackTime[i][j] == attackTime[attacker.getR()][attacker.getC()]) {
                         int currentSum = i + j;
                         int attackerSum = attacker.getR() + attacker.getC();
 
                         if (currentSum > attackerSum) {
                             shouldUpdate = true;
-                        }
-                        // 행과 열의 합이 같다면 열이 더 큰 포탑을 선택
-                        else if (currentSum == attackerSum && j > attacker.getC()) {
+                        } else if (currentSum == attackerSum && j > attacker.getC()) {
                             shouldUpdate = true;
                         }
                     }
 
-                    // 포탑 업데이트
                     if (shouldUpdate) {
                         attacker = new Tower(i, j);
                     }
@@ -340,7 +313,6 @@ public class Main {
         }
 
         chk[attacker.getR()][attacker.getC()] = 1;
-
-        map[attacker.getR()][attacker.getC()] += (N + M); //공격력 증가
+        map[attacker.getR()][attacker.getC()] += (N + M); // 공격력 증가
     }
 }
